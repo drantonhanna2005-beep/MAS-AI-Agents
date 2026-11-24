@@ -1,0 +1,215 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b1220">
+<title>MAS AI Agents — فريق الوكلاء الأكاديمي</title>
+<link rel="icon" type="image/png" sizes="64x64" href="/static/assets/fav/icon-64.png">
+<link rel="icon" type="image/x-icon" href="/static/assets/favicon.ico">
+<link rel="apple-touch-icon" href="/static/assets/fav/icon-180.png">
+<link rel="apple-touch-icon" href="/static/assets/fav/icon-64.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css?v=6">
+</head>
+<body>
+
+<!-- ============ أيقونات SVG موحّدة (خطوط دقيقة، بلا إيموجي) ============ -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-panel" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M9 4v16"/><path d="M6 8h.01M6 12h.01"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 10.8 7.6-4.4M8.2 13.2l7.6 4.4"/></symbol>
+    <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21M9 21h6"/></symbol>
+    <symbol id="i-camera" viewBox="0 0 24 24"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1.2l1.1-2h6.4l1.1 2h1.2A2.5 2.5 0 0 1 20 8.5v8A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5z"/><circle cx="12" cy="12.5" r="3.2"/></symbol>
+    <symbol id="i-clip" viewBox="0 0 24 24"><path d="m20 11.5-7.8 7.8a5 5 0 0 1-7-7l8.2-8.2a3.4 3.4 0 0 1 4.8 4.8l-8.2 8.2a1.8 1.8 0 0 1-2.6-2.6l7.6-7.6"/></symbol>
+    <symbol id="i-send" viewBox="0 0 24 24"><path d="M4 12 20 4l-4.5 16-4-6.5z"/><path d="M11.5 13.5 20 4"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20 15.2A8.4 8.4 0 0 1 8.8 4 8.5 8.5 0 1 0 20 15.2z"/></symbol>
+    <symbol id="i-globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 3.8 5.6 3.8 9S14.5 18.4 12 21c-2.5-2.6-3.8-5.6-3.8-9S9.5 5.6 12 3z"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 6.7"/><path d="M20 4v7h-7"/></symbol>
+    <symbol id="i-pin" viewBox="0 0 24 24"><path d="m9 3 6 0-.7 6.2 3.2 3.2-4.3 1-2.7 6.1-1.4-6.9-4.6-1.8 4.2-2.4z"/></symbol>
+    <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M4 20h4l11-11a2.8 2.8 0 0 0-4-4L4 16z"/><path d="m13.5 6.5 4 4"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16M9 7V4h6v3M7 7l1 13h8l1-13M10 11v5M14 11v5"/></symbol>
+    <symbol id="i-library" viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v18H6.5A2.5 2.5 0 0 1 4 18.5z"/><path d="M4 17.5A2.5 2.5 0 0 1 6.5 15H20"/><path d="M8 7h8"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="i-thumb-up" viewBox="0 0 24 24"><path d="M7 10v11H4V10zM7 10l4-7c1.8 0 3 1.3 2.6 3.1L13 10h5.5a2 2 0 0 1 2 2.4l-1.2 6.2A2.5 2.5 0 0 1 16.8 21H7"/></symbol>
+    <symbol id="i-thumb-down" viewBox="0 0 24 24"><path d="M17 14V3h3v11zM17 14l-4 7c-1.8 0-3-1.3-2.6-3.1L11 14H5.5a2 2 0 0 1-2-2.4l1.2-6.2A2.5 2.5 0 0 1 7.2 3H17"/></symbol>
+    <symbol id="i-branch" viewBox="0 0 24 24"><circle cx="6" cy="5" r="2.5"/><circle cx="6" cy="19" r="2.5"/><circle cx="18" cy="9" r="2.5"/><path d="M6 7.5v9M8.5 5H12a4 4 0 0 1 4 4v0"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 20h16"/></symbol>
+    <symbol id="i-open" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9"/><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7"/></symbol>
+    <symbol id="i-play" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></symbol>
+    <symbol id="i-pause" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></symbol>
+    <symbol id="i-stop" viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></symbol>
+    <symbol id="i-cam-switch" viewBox="0 0 24 24"><path d="M4 8.5A2.5 2.5 0 0 1 6.5 6h1l1-2h7l1 2h1A2.5 2.5 0 0 1 20 8.5v8A2.5 2.5 0 0 1 17.5 19h-11A2.5 2.5 0 0 1 4 16.5z"/><path d="M9 12a3 3 0 0 0 5.2 2M15 12a3 3 0 0 0-5.2-2"/><path d="M14.8 8.6V10h-1.4M9.2 15.4V14h1.4"/></symbol>
+    <symbol id="i-speaker" viewBox="0 0 24 24"><path d="M4 10v4h4l5 4V6L8 10z"/><path d="M16 9a4 4 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+    <symbol id="i-more" viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.4" fill="currentColor" stroke="none"/><circle cx="19" cy="12" r="1.4" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8.5" cy="9" r="1.5"/><path d="m21 15-5-5L5 20"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h5"/></symbol>
+    <symbol id="i-expand" viewBox="0 0 24 24"><path d="M4 9V4h5"/><path d="M20 15v5h-5"/><path d="M4 4l6 6"/><path d="M20 20l-6-6"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></symbol>
+<symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6z"/><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/></symbol>
+  </defs>
+</svg>
+
+<div id="app">
+  <div id="sidebarBackdrop" class="sb-backdrop" hidden></div>
+
+  <!-- ==================== الشريط الجانبي ==================== -->
+  <aside id="sidebar" aria-label="Conversation sidebar">
+    <div class="sb-head">
+      <img class="brand-icon" src="/static/assets/fav/icon-64.png" alt="MAS AI Agents" width="34" height="34" decoding="async">
+      <div class="sb-title">
+        <b>MAS AI Agents</b>
+        <small data-i18n="app_sub">AI MAS — مساعد الجامعة</small>
+      </div>
+      <button id="sbClose" class="sb-close" data-i18n-title="close_sidebar" title="إغلاق القائمة" aria-label="Close sidebar">
+        <svg class="ic"><use href="#i-panel"/></svg>
+      </button>
+    </div>
+
+    <div class="sb-actions">
+      <button id="newChatBtn" class="new-chat-btn" data-i18n-title="new_chat_tip" title="محادثة جديدة" aria-label="New chat">
+        <svg class="ic"><use href="#i-plus"/></svg>
+      </button>
+      <div class="sb-search">
+        <svg class="ic"><use href="#i-search"/></svg>
+        <input id="searchChats" type="search" data-i18n-ph="search_ph" placeholder="ابحث في محادثاتك…" autocomplete="off">
+      </div>
+    </div>
+
+    <nav id="chatList" aria-label="سجل المحادثات"></nav>
+
+    <button class="library-entry" data-open="library" data-i18n-title="library_title" title="المكتبة">
+      <svg class="ic"><use href="#i-library"/></svg>
+      <span data-i18n="library">المكتبة</span>
+      <em id="libCount">0</em>
+    </button>
+
+    <div class="sb-foot">
+      <button data-open="agents"><svg class="ic"><use href="#i-spark"/></svg><span data-i18n="btn_team">الفريق</span></button>
+      <button data-open="links"><svg class="ic"><use href="#i-open"/></svg><span data-i18n="btn_links">الروابط</span></button>
+      <button data-open="gpa"><svg class="ic"><use href="#i-file"/></svg><span data-i18n="btn_gpa">GPA</span></button>
+      <button data-open="cv"><svg class="ic"><use href="#i-file"/></svg><span data-i18n="btn_cv">CV</span></button>
+      <button data-open="settings"><svg class="ic"><use href="#i-panel"/></svg><span data-i18n="btn_settings">الإعدادات</span></button>
+    </div>
+  </aside>
+
+  <!-- ==================== المنطقة الرئيسية ==================== -->
+  <main id="main">
+    <header id="topbar">
+      <div class="tb-cluster tb-left">
+        <button id="sbTop" class="tb-icon" data-i18n-title="sidebar_toggle" title="إظهار/إخفاء القائمة الجانبية"
+                aria-label="Toggle sidebar" aria-expanded="true" aria-controls="sidebar">
+          <svg class="ic"><use href="#i-panel"/></svg>
+        </button>
+        <a class="tb-brand" href="/" title="MAS AI Agents" aria-label="MAS AI Agents home">
+          <img src="/static/assets/fav/icon-64.png" alt="">
+        </a>
+        <button id="searchBtn" class="tb-icon" data-i18n-title="search_chats" title="بحث في المحادثات" aria-label="Search conversations">
+          <svg class="ic"><use href="#i-search"/></svg>
+        </button>
+        <button id="newChatTop" class="tb-icon tb-new" data-i18n-title="new_chat_tip" title="محادثة جديدة" aria-label="New chat">
+          <svg class="ic"><use href="#i-plus"/></svg>
+        </button>
+        <div class="tb-title">
+          <span id="chatTitle" data-i18n="new_chat">محادثة جديدة</span>
+          <small id="chatSub" data-i18n="toolbar_sub">مساحة عمل ذكية</small>
+        </div>
+      </div>
+
+      <span class="spacer"></span>
+
+      <div class="tb-status">
+        <span id="agentBadge" class="badge agent" data-i18n="agent_default">🧭 المنسّق الذكي</span>
+        <span id="modelBadge" class="badge subtle" title="المزود والنموذج الحالي">…</span>
+        <span id="indexBadge" class="badge subtle" title="مقاطع المعرفة المفهرسة">0</span>
+      </div>
+
+      <div class="tb-cluster tb-right">
+        <button id="shareBtn" class="tb-icon" data-i18n-title="share_conversation" title="مشاركة المحادثة" aria-label="Share conversation">
+          <svg class="ic"><use href="#i-share"/></svg>
+        </button>
+        <button id="langBtn" class="tb-icon lang" data-i18n-title="lang_title" title="تبديل اللغة / Switch language">EN</button>
+        <button id="reindexBtn" class="tb-icon" data-i18n-title="reindex_title" title="إعادة فهرسة الملفات" aria-label="Re-index">
+          <svg class="ic"><use href="#i-refresh"/></svg>
+        </button>
+        <button id="themeBtn" class="tb-icon" data-i18n-title="theme_title" title="الوضع الليلي/النهاري" aria-label="Toggle theme">
+          <svg class="ic"><use href="#i-sun"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <div id="chatScroll">
+      <div id="welcome">
+        <div class="hero">
+          <img class="hero-logo" src="/static/assets/fav/icon-64.png" alt="MAS AI Agents">
+          <h1 data-i18n="hero_title">فريق وكلاء ذكاء اصطناعي… لخدمتك</h1>
+          <p data-i18n="hero_sub">…</p>
+        </div>
+        <div id="agentCards" class="cards"></div>
+        <div class="chips">
+          <button class="chip" data-i18n="chip1">اعمل لي خطة مذاكرة للترم الجاي</button>
+          <button class="chip" data-i18n="chip2">إزاي أحسب معدلي GPA؟</button>
+          <button class="chip" data-i18n="chip3">ابنِ لي CV احترافي متوافق مع ATS</button>
+          <button class="chip" data-i18n="chip4">مناطق السكن قرب الجامعة في اسيوط الجديدة</button>
+          <button class="chip" data-i18n="chip5">روابط الجروبات والدرويفات</button>
+          <button class="chip" data-i18n="chip6">أختار AI ولا Cyber Security في Level 3؟</button>
+        </div>
+      </div>
+      <div id="messages"></div>
+    </div>
+
+    <nav id="convNav" aria-label="Conversation navigator"></nav>
+
+    <button id="scrollBottomBtn" class="scroll-bottom-btn" aria-label="Scroll to bottom" title="Scroll to bottom"><svg class="ic"><use href="#i-chevron"/></svg></button>
+  <div id="composerWrap">
+      <div id="attachStrip" class="hidden"></div>
+      <label id="trainRow" class="hidden"><input type="checkbox" id="trainChk" checked>
+        <span data-i18n="train_label">تدريب الفريق على هذه الملفات (إضافتها لقاعدة المعرفة)</span></label>
+      <div class="composer">
+        <button id="attachBtn" class="c-btn" data-i18n-title="attach_title" title="إرفاق ملفات" aria-label="Attach files">
+          <svg class="ic"><use href="#i-clip"/></svg>
+        </button>
+        <input type="file" id="fileInput" multiple hidden
+               accept="image/*,audio/*,video/*,.pdf,.docx,.pptx,.xlsx,.csv,.txt,.md,.json">
+        <button id="cameraBtn" class="c-btn" data-i18n-title="camera" title="الكاميرا" aria-label="Open camera">
+          <svg class="ic"><use href="#i-camera"/></svg>
+        </button>
+        <textarea id="input" rows="1" data-i18n-ph="input_ph"
+                  placeholder="اكتب سؤالك هنا… (Enter للإرسال • Shift+Enter لسطر جديد)"></textarea>
+        <button id="micBtn" class="c-btn" data-i18n-title="mic_title" title="إدخال صوتي" aria-label="Voice input">
+          <svg class="ic"><use href="#i-mic"/></svg>
+        </button>
+        <button id="sendBtn" class="c-btn send" data-i18n-title="send_title" title="إرسال" aria-label="Send">
+          <svg class="ic"><use href="#i-send"/></svg>
+        </button>
+      </div>
+      <div class="hint" data-i18n="hint_line">الوكيل المتخصص يجيب تلقائياً • إجابات بالمصادر • سجل كامل لكل أسئلتك • يعمل مجاناً 100%</div>
+    </div>
+  </main>
+</div>
+
+<!-- ==================== شريط المشاركة السفلي ==================== -->
+<div id="shareBar" class="share-bar" hidden>
+  <div class="share-bar-inner">
+    <label class="share-all"><input type="checkbox" id="shareSelectAll" checked>
+      <span data-i18n="share_select_all">تحديد الكل</span></label>
+    <span id="shareCount" class="share-count">0</span>
+    <span class="share-hint" data-i18n="share_hint">اختر الرسائل التي تريد مشاركتها</span>
+    <button id="shareCancel" class="btn ghost" data-i18n="share_cancel">إلغاء</button>
+    <button id="shareCreate" class="btn primary" data-i18n="share_create">إنشاء رابط عام</button>
+  </div>
+</div>
+
+<div id="modalRoot"></div>
+<div id="toastRoot"></div>
+<script src="/static/i18n.js?v=6"></script>
+<script src="/static/app.js?v=6"></script>
+</body>
+</html>

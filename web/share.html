@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="ar" dir="rtl" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>MAS AI Agents - Shared conversation</title>
+<link rel="icon" type="image/png" sizes="64x64" href="/static/assets/fav/icon-64.png">
+<link rel="icon" type="image/x-icon" href="/static/assets/favicon.ico">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root,html[data-theme="dark"]{--bg:#0d1320;--bg2:#131c2d;--card:#182235;--card2:#1f2b42;--fg:#eef3fb;--muted:#9fb0c8;--bd:rgba(255,255,255,.10);--accent:#d8c47a;--accent2:#2dd4bf;--code:#0b1220;--shadow:0 10px 30px rgba(0,0,0,.28)}
+html[data-theme="light"]{--bg:#f4f7fb;--bg2:#ffffff;--card:#ffffff;--card2:#f7f9fc;--fg:#172033;--muted:#5d6d82;--bd:rgba(23,32,51,.12);--accent:#b8962e;--accent2:#0f766e;--code:#f3f6fb;--shadow:0 10px 30px rgba(15,23,42,.08)}
+*{box-sizing:border-box}html,body{margin:0;min-height:100%;background:var(--bg);color:var(--fg);font-family:Cairo,system-ui,-apple-system,Segoe UI,sans-serif}
+body{overflow-y:auto;overflow-x:hidden}
+.wrap{max-width:980px;margin:0 auto;padding:24px 16px 64px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:18px 20px;border:1px solid var(--bd);background:linear-gradient(180deg,var(--card),var(--card2));border-radius:20px;box-shadow:var(--shadow);position:sticky;top:0;z-index:5;backdrop-filter:blur(10px)}
+.brand{display:flex;align-items:center;gap:12px;min-width:0}.logo{width:44px;height:44px;border-radius:14px;object-fit:contain;background:rgba(255,255,255,.04);padding:4px;border:1px solid var(--bd)}.brand h1{margin:0;font-size:1.15rem;line-height:1.2}.brand p{margin:2px 0 0;color:var(--muted);font-size:.92rem}
+.actions{display:flex;gap:8px;flex-wrap:wrap}.btn{appearance:none;border:1px solid var(--bd);background:var(--card2);color:var(--fg);padding:9px 14px;border-radius:12px;font:inherit;cursor:pointer;text-decoration:none}.btn:hover{border-color:color-mix(in srgb,var(--accent) 45%, var(--bd))}
+.meta{margin:16px 4px 0;color:var(--muted);font-size:.93rem}
+.msgs{display:flex;flex-direction:column;gap:14px;margin-top:18px}
+.share-msg{border:1px solid var(--bd);background:linear-gradient(180deg,var(--card),color-mix(in srgb,var(--card) 92%, var(--bg)));border-radius:18px;padding:16px 16px 14px;box-shadow:0 1px 0 rgba(255,255,255,.02);overflow:visible}
+.share-msg.user{border-color:color-mix(in srgb,var(--accent) 28%, var(--bd))}
+.share-msg .meta{display:flex;justify-content:space-between;gap:10px;align-items:baseline;margin:0 0 10px;color:var(--muted);font-size:.86rem}.share-msg .who{font-weight:700;color:var(--fg)}.share-msg .time{white-space:nowrap}.edited{opacity:.8;font-size:.82em}
+.body{min-width:0;overflow-wrap:anywhere;word-break:break-word;line-height:1.8;font-size:1rem}.body>*:first-child{margin-top:0}.body>*:last-child{margin-bottom:0}.body p,.body ul,.body ol,.body blockquote,.body pre,.body .table-wrap,.body h1,.body h2,.body h3,.body h4{margin:.7rem 0}
+.body ul,.body ol{padding-inline-start:1.4rem}.body blockquote{margin-inline:0;padding:.2rem .9rem;border-inline-start:3px solid var(--accent);color:var(--muted);background:color-mix(in srgb,var(--accent) 7%, transparent);border-radius:8px}
+.body code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;background:color-mix(in srgb,var(--accent2) 10%, transparent);padding:.12em .35em;border-radius:6px;font-size:.92em}
+.code-block{border:1px solid var(--bd);border-radius:14px;background:var(--code);overflow:hidden}.code-head{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:8px 10px;border-bottom:1px solid var(--bd);color:var(--muted);font-size:.82rem}.code-copy{border:1px solid var(--bd);background:transparent;color:var(--fg);border-radius:8px;padding:4px 10px;font:inherit;cursor:pointer}
+.code-block pre{margin:0;padding:14px;overflow:auto;max-width:100%}.code-block code{background:transparent;padding:0;border-radius:0;font-size:.88rem;line-height:1.7;white-space:pre}
+.table-wrap{max-width:100%;overflow:auto;border:1px solid var(--bd);border-radius:12px}table{width:100%;border-collapse:collapse;min-width:320px}th,td{padding:10px 12px;border-bottom:1px solid var(--bd);text-align:start;vertical-align:top}th{background:color-mix(in srgb,var(--accent) 10%, transparent)}
+.share-atts{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-top:12px}.share-att{border:1px solid var(--bd);border-radius:14px;background:color-mix(in srgb,var(--card2) 85%, transparent);overflow:hidden;min-width:0}
+.share-att.img img{display:block;width:100%;max-height:360px;object-fit:contain;background:rgba(0,0,0,.12);cursor:zoom-in}
+.share-att figcaption,.share-att.file{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 10px;font-size:.84rem;color:var(--muted)}.share-att a{color:var(--accent2);text-decoration:none;white-space:nowrap}
+.share-think{margin-top:12px;border:1px dashed var(--bd);border-radius:12px;padding:8px 10px;color:var(--muted)}.share-think summary{cursor:pointer;font-weight:600}.think-body{white-space:pre-wrap;margin-top:8px;line-height:1.7}
+.share-lightbox{position:fixed;inset:0;background:rgba(0,0,0,.72);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}.share-lightbox.open{display:flex}.share-lightbox-inner{max-width:min(1100px,96vw);max-height:92vh;display:flex;flex-direction:column;gap:10px}.share-lightbox img{max-width:100%;max-height:calc(92vh - 50px);object-fit:contain;border-radius:12px;background:#111}.share-lightbox-close{align-self:flex-end;border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.35);color:#fff;width:40px;height:40px;border-radius:10px;font-size:1.4rem;cursor:pointer}.share-lightbox-cap{color:#eee;text-align:center;font-size:.9rem}
+.empty{padding:24px;text-align:center;color:var(--muted);border:1px dashed var(--bd);border-radius:16px}
+@media (max-width:700px){.wrap{padding:14px 10px 48px}.top{padding:14px}.share-msg{padding:14px}.share-msg .meta{flex-direction:column;align-items:flex-start}.share-att.img img{max-height:260px}}
+@media print{.top{position:static}.btn{display:none}body{background:#fff;color:#000}.share-msg,.top{box-shadow:none}}
+</style>
+</head>
+<body data-theme="dark">
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <img src="/static/assets/fav/icon-64.png" alt="MAS AI" class="logo">
+      <div>
+        <h1 id="shareTitle">Shared conversation</h1>
+        <p id="shareMeta">Loading…</p>
+      </div>
+    </div>
+    <div class="actions">
+      <button id="copyLink" class="btn" type="button">Copy link</button>
+      <a href="/" class="btn">Open MAS AI</a>
+    </div>
+  </header>
+  <main id="shareMsgs" class="msgs" aria-live="polite"></main>
+</div>
+<script src="/static/share.js?v=7"></script>
+</body>
+</html>
+
+<style>
+/* كتل الكود في صفحة المشاركة: نسخ + ملء الشاشة + تمرير أفقي بدون قص */
+.code-block{direction:ltr;text-align:left;max-width:100%;min-width:0;overflow:hidden;border:1px solid var(--bd);border-radius:12px;background:var(--card2);margin:10px 0}
+.code-block pre{margin:0;padding:13px 15px;overflow:auto;max-width:100%;background:#0b1220;color:#dbe6f5;font-size:.86rem;line-height:1.6}
+html[data-theme="light"] .code-block pre{background:#0f1726;color:#e2e8f0}
+.code-block pre code{font-family:Consolas,"Cascadia Code",Menlo,monospace;white-space:pre;display:block;min-width:max-content;background:none;color:inherit}
+.code-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 11px;border-bottom:1px solid var(--bd);font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.code-actions{display:inline-flex;gap:6px;text-transform:none;letter-spacing:0}
+.code-actions button{border:1px solid var(--bd);background:var(--card2);color:var(--fg);border-radius:8px;padding:4px 9px;font-size:.78rem;cursor:pointer}
+.code-actions button:hover{border-color:var(--accent)}
+.code-full-modal{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.62);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:20px}
+.code-full-modal.open{display:flex}
+.code-full-card{width:min(1100px,100%);max-height:calc(100vh - 40px);display:flex;flex-direction:column;background:var(--card);border:1px solid var(--bd);border-radius:14px;overflow:hidden}
+.code-full-card .cf-pre{flex:1;min-height:0;overflow:auto;max-height:calc(100vh - 110px)}
+/* تمرير كامل بدون حاويات ثابتة تقص المحتوى */
+html,body{height:auto!important;min-height:100%;overflow-y:auto!important}
+.share-wrap{max-height:none!important;height:auto!important;overflow:visible!important}
+.share-msgs{max-height:none!important;height:auto!important;overflow:visible!important}
+.share-msg .body{overflow:visible;word-break:break-word;overflow-wrap:anywhere;min-width:0}
+.share-msg .body table{display:block;max-width:100%;overflow-x:auto}
+</style>
+

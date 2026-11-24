@@ -1,0 +1,52 @@
+{
+  "provider": "auto",
+  "api_keys": {
+    "groq": "",
+    "openrouter": "",
+    "gemini": ""
+  },
+  "main_models": {
+    "ollama": "llama3.1:8b",
+    "groq": "openai/gpt-oss-20b",
+    "openrouter": "openrouter/free",
+    "gemini": "gemini-flash-lite-latest"
+  },
+  "router_models": {
+    "ollama": "llama3.2:3b",
+    "groq": "llama-3.1-8b-instant",
+    "openrouter": "openrouter/free",
+    "gemini": "gemini-flash-lite-latest"
+  },
+  "model_keys": {
+    "openrouter": {
+      "openrouter/free": "",
+      "google/gemma-4-26b-a4b-it:free": "",
+      "google/gemma-4-31b-it:free": "",
+      "nvidia/nemotron-3-embed-1b:free": "",
+      "nvidia/nemotron-3.5-embed-8b:free": "",
+      "nvidia/llama-nemotron-embed-vl-1b-v2:free": "",
+      "liquid/lfm-2.5-embedding-350m:free": "",
+      "heygen/heygen-voice-1-turbo:free": "",
+      "fish-audio/s2.1-pro-free:free": ""
+    }
+  },
+  "stt": {
+    "model": "whisper-large-v3-turbo"
+  },
+  "tts": {
+    "model": "heygen/heygen-voice-1-turbo:free",
+    "voice": "nadine"
+  },
+  "embed": {
+    "provider": "auto",
+    "model": "nvidia/nemotron-3-embed-1b:free"
+  },
+  "ollama_url": "http://localhost:11434",
+  "temperature": 0.65,
+  "deep_think": true,
+  "web_search": true,
+  "rag_k": 6,
+  "embed_model": "nomic-embed-text",
+  "max_agents": 2,
+  "auto_translate": true
+}

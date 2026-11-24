@@ -1,0 +1,48 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Local configuration with secrets (DO NOT COMMIT REAL KEYS)
+config.json
+.env
+.env.*
+!.env.example
+
+# Local SQLite databases (contains private chat history and session data)
+*.db
+*.db-wal
+*.db-shm
+history.db*
+
+# User uploads and temporary multimodal files
+uploads/*
+!uploads/.gitkeep
+data/من_الشات/*
+!data/من_الشات/.gitkeep
+data/مستنداتي/*
+!data/مستنداتي/.gitkeep
+
+# Vector store and embedding cache
+index_store/*
+!index_store/.gitkeep
+
+# Backup folders
+_backup_*
+*.bak
+
+# Logs and runtime files
+*.log
+.run.log
+
+# Temporary test, inspection, and patch scratch scripts
+_*
+!_docs/
+!_docs/*
+!**/__init__.py
+
+# OS / Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
