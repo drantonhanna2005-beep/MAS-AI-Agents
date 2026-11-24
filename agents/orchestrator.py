@@ -24,7 +24,7 @@ TAG_ANSWER = "[[ANSWER]]"
 
 GPA_RE = re.compile(r"gpa|معدل|تراكمي|تقديرات|احسب.*درجات|حساب.*معدل", re.I)
 CV_RE = re.compile(r"\bcv\b|سيرة|resume|ats", re.I)
-_GRADE_TOKEN = re.compile(r"(A\+|A-|B\+|B-|C\+|C-|D\+|ممتاز|جيد جداً?|مقبول|ضعيف|راسب|[A-F]\b)", re.I)
+_GRADE_TOKEN = re.compile(r"\b(A\+|A-|B\+|B-|C\+|C-|D\+|[A-F]|ممتاز|جيد جداً?|مقبول|ضعيف|راسب)\b", re.I)
 GREETING_RE = re.compile(r"^\s*(?:هاي|هلا|هلو|أهلا|اهلا|أهلًا|اهلا وسهلا|مرحبا|مرحباً|السلام عليكم|وعليكم السلام|صباح الخير|مساء الخير|صباح النور|مساء النور|hi+|hello+|hey+|yo+|good\s+(?:morning|evening|afternoon|night)|bonjour|salut|bonsoir)[\s!?.،,~]*$", re.I)
 SHORT_SMALLTALK_RE = re.compile(r"^\s*(?:شكرا|شكرًا|thanks|thank you|thx|ok|okay|تمام|ماشي|حسنا|حسنًا|yes|no|نعم|لا|ايوه|أيوه)[\s!?.،,~]*$", re.I)
 
@@ -61,7 +61,7 @@ def _keywords_confident(message: str) -> bool:
 
 
 def _classify_llm(message: str, cfg: dict, prov: dict) -> dict | None:
-    router_model = cfg["router_models"].get(prov["provider"]) or prov["model"]
+    router_model = (cfg.get("router_models") or {}).get(prov["provider"]) or prov["model"]
     system = (
         "أنت موجّه فريق وكلاء جامعي. صنّف رسالة المستخدم وأعد JSON فقط دون أي شرح، بالشكل:\n"
         '{"agents": ["..."], "complexity": "simple"|"deep", "needs_rag": true|false, "needs_web": true|false}\n'
@@ -97,15 +97,28 @@ def parse_gpa_rows(message: str) -> list[dict]:
     rows: list[dict] = []
     for line in message.splitlines():
         line = line.strip()
-        if not line or line.startswith(("|", "#", "-")):
+        if not line or line.startswith("#"):
+            continue
+        if re.match(r"^\|?[\s:-]+(?:\|[\s:-]+)+\|?$", line):
+            continue
+        line = re.sub(r"^(?:[-*•]|\d+\.|\b)\s*", "", line)
+        line = line.strip(" |")
+        if not line:
             continue
         gm = _GRADE_TOKEN.search(line)
         if not gm:
             continue
-        nums = re.findall(r"\d+(?:\.\d+)?", line[:gm.start()] + line[gm.end():])
-        if not nums:
-            continue
-        hours = float(nums[0])
+        pre_text = line[:gm.start()].strip()
+        post_text = line[gm.end():].strip()
+        rem_text = f"{pre_text} {post_text}"
+        hr_match = re.search(r"(\d+(?:\.\d+)?)\s*(?:ساعات|ساعة|hours?|hrs?|h|cr)\b", rem_text, re.I)
+        if hr_match:
+            hours = float(hr_match.group(1))
+        else:
+            nums = re.findall(r"\d+(?:\.\d+)?", rem_text)
+            if not nums:
+                continue
+            hours = float(nums[-1])
         if hours <= 0 or hours > 12:
             continue
         course = (line[:gm.start()].strip(" -|،:") or f"مادة {len(rows) + 1}")[:40]
@@ -202,7 +215,7 @@ def _chat_candidates(cfg: dict, prov: dict, model: str) -> list[tuple[str, str, 
     elif prov["provider"] in ("groq", "gemini"):
         ok = (cfg.get("api_keys") or {}).get("openrouter", "")
         if ok:
-            cands.append(("openrouter", cfg["main_models"].get("openrouter") or "openrouter/free", ok))
+            cands.append(("openrouter", (cfg.get("main_models") or {}).get("openrouter") or "openrouter/free", ok))
         if prov["provider"] == "groq":
             gk = (cfg.get("api_keys") or {}).get("gemini", "")
             if gk:
@@ -244,7 +257,7 @@ def _stream_agent(agent_id: str, cfg: dict, prov: dict, user_block: str,
                   lang: str = "ar") -> Generator[dict, None, None]:
     """بث حي لإجابة وكيل واحد مع سلسلة تفاوض تلقائية بين المزودات عند 429/5xx/مفتاح تالف."""
     acc = acc if acc is not None else {"thinking": "", "content": ""}
-    model = prov.get("vision_model") or cfg["main_models"].get(prov["provider"]) or prov["model"]
+    model = prov.get("vision_model") or prov.get("model") or (cfg.get("main_models") or {}).get(prov.get("provider", ""), "")
     splitter = _TagSplitter()
     last_err: LLMError | None = None
     for prov_name, model_i, key_i in _chat_candidates(cfg, prov, model):
@@ -279,13 +292,12 @@ def _stream_agent(agent_id: str, cfg: dict, prov: dict, user_block: str,
             yield {"type": "fallback", "text": str(e)}
             continue
     if last_err:
-        yield {"type": "error", "text": str(last_err)}
         raise last_err
 
 
-def _offline_answer(user_block: str, sources: list[dict], lang: str = "ar") -> Generator[dict, None, None]:
+def _offline_answer(query: str, sources: list[dict], lang: str = "ar") -> Generator[dict, None, None]:
     """وضع محلي بدون LLM: يعرض أقرب ما في الفهرس + نصائح تفعيل النموذج (عربي/إنجليزي)."""
-    hits = rag.search(user_block[-500:], k=4, min_score=0.01)
+    hits = rag.search(query, k=4, min_score=0.01)
     en = lang == "en"
     if en:
         yield {"type": "content", "delta": "### 📡 Local Mode (no LLM configured)\n\n"}
@@ -364,14 +376,19 @@ def run_stream(*, chat_id: str, message: str, attachments: list[dict] | None = N
     # ---------- تاريخ المحادثة (نجلب آخر 8 رسائل ما عدا الأخيرة المكررة عند التوليد)
     from core import history as hist
     msgs = hist.get_messages(chat_id)
-    tail = [{"role": m["role"], "content": m["content"]} for m in msgs[:-1]][-8:]
-
-    # ---------- استعادة رسالة إعادة التوليد + فلتر الرؤية
     if regenerate and not message:
         for m in reversed(msgs):
             if m["role"] == "user":
                 message = m["content"]
                 break
+        user_idx = next((i for i in range(len(msgs) - 1, -1, -1) if msgs[i]["role"] == "user"), None)
+        history_msgs = msgs[:user_idx] if user_idx is not None else []
+    else:
+        history_msgs = msgs[:-1]
+
+    tail = [{"role": m["role"], "content": m["content"]} for m in history_msgs][-8:]
+
+    # ---------- استعادة رسالة إعادة التوليد + فلتر الرؤية
     if not message:
         message = "أعد صياغة إجابتك السابقة بشكل أفضل وبدقة أعلى."
     route_extra = ""  # ملاحظات نظام تُضاف لسياق الوكيل (تُعرَّف مبكراً لتجنب UnboundLocalError)
@@ -383,7 +400,7 @@ def run_stream(*, chat_id: str, message: str, attachments: list[dict] | None = N
             vision_prov = None
             gem_key = (cfg.get("api_keys") or {}).get("gemini", "")
             if gem_key:
-                vision_prov = ("gemini", cfg["main_models"].get("gemini") or "gemini-flash-lite-latest", gem_key)
+                vision_prov = ("gemini", (cfg.get("main_models") or {}).get("gemini") or "gemini-flash-lite-latest", gem_key)
             else:
                 for alt in ("google/gemma-4-26b-a4b-it:free", "google/gemma-4-31b-it:free", "meta-llama/llama-4-scout:free"):
                     k = get_model_key("openrouter", alt, cfg)
@@ -399,6 +416,8 @@ def run_stream(*, chat_id: str, message: str, attachments: list[dict] | None = N
                 route_extra += ("\n\n[System: User attached image(s), but no vision-capable provider is configured. "
                                 "Do NOT claim you saw the image. Ask the user to add a Gemini key in Settings, or describe what is needed. Be explicit and honest.]")
                 images = []
+        else:
+            prov = {**prov, "vision_model": prov.get("model", "")}
         if images:
             route_extra += ("\n\n[System: The user attached image(s) which are provided to you as real visual input. "
                             "Analyze what you actually SEE in them (objects, people, text/OCR, colors, layout, charts, diagrams). "
@@ -428,8 +447,10 @@ def run_stream(*, chat_id: str, message: str, attachments: list[dict] | None = N
         rows = parse_gpa_rows(message)
         if rows:
             try:
-                res = gpatool.calc(rows, scale="egypt5")
-                tool_markdown = gpatool.to_markdown(res)
+                has_letter_grades = any(re.match(r"^[A-F][+-]?$", str(r.get("grade", "")).strip(), re.I) for r in rows)
+                scale = "standard4" if has_letter_grades else "egypt5"
+                res = gpatool.calc(rows, scale=scale, lang=lang)
+                tool_markdown = gpatool.to_markdown(res, lang=lang)
                 route_extra += "\n\nنتيجة حاسبة GPA المحلية (احتسبها وأعدها للطالب مؤكدة): \n" + tool_markdown
             except Exception:
                 pass
@@ -506,7 +527,7 @@ def run_stream(*, chat_id: str, message: str, attachments: list[dict] | None = N
     all_think, all_content = "", ""
     try:
         if prov["provider"] == "offline":
-            for ev in _offline_answer(user_block, sources, lang):
+            for ev in _offline_answer(message, sources, lang):
                 all_content += ev.get("delta", "")
                 yield sse(ev)
         else:
@@ -521,10 +542,12 @@ def run_stream(*, chat_id: str, message: str, attachments: list[dict] | None = N
                 second = route["agents"][1]
                 yield sse({"type": "agent_switch", "agent": {"id": second, "emoji": AGENT_MAP[second]["emoji"],
                                                               "name": AGENT_MAP[second]["name"]}})
+                yield sse({"type": "content", "delta": "\n\n"})
                 acc2 = {"thinking": "", "content": ""}
+                sec_extra = (route_extra + "\n\n" if route_extra else "") + f"إجابة الزميل الأول:\n{all_content[:3500]}"
                 for ev in _stream_agent(second, cfg, prov, user_block, tail,
-                                        extra_context=f"إجابة الزميل الأول:\n{all_content[:3500]}",
-                                        secondary_of=primary, acc=acc2, lang=lang):
+                                        extra_context=sec_extra,
+                                        secondary_of=primary, images=images or None, acc=acc2, lang=lang):
                     yield sse(ev)
                 if acc2["thinking"]:
                     all_think += ("\n\n" + acc2["thinking"])
@@ -532,10 +555,11 @@ def run_stream(*, chat_id: str, message: str, attachments: list[dict] | None = N
                     all_content += ("\n\n" + acc2["content"])
     except LLMError as e:
         yield sse({"type": "error", "text": str(e)})
-        # هبوط آمن: أجب من الفهرس
-        for ev in _offline_answer(user_block, sources, lang):
-            all_content += ev.get("delta", "")
-            yield sse(ev)
+        # هبوط آمن: أجب من الفهرس فقط لو لم يُبث أي محتوى
+        if not all_content.strip():
+            for ev in _offline_answer(message, sources, lang):
+                all_content += ev.get("delta", "")
+                yield sse(ev)
 
     final_sources = sources + web_sources
     yield sse({"type": "sources", "sources": final_sources})

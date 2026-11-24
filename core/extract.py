@@ -12,7 +12,8 @@ MAX_CHARS = 120_000
 TEXT_EXTS = {".pdf", ".docx", ".pptx", ".xlsx", ".xlsm", ".csv", ".txt", ".md", ".json", ".log", ".html", ".htm", ".py"}
 
 
-def extract_text(path: Path) -> str:
+def extract_text(path: Path | str) -> str:
+    path = Path(path)
     try:
         ext = path.suffix.lower()
         if ext == ".pdf":
@@ -26,7 +27,8 @@ def extract_text(path: Path) -> str:
         if ext == ".csv":
             return _csv(path)
         if ext in (".txt", ".md", ".json", ".log", ".html", ".htm", ".py"):
-            return path.read_text("utf-8", errors="ignore")[:MAX_CHARS]
+            with path.open("r", encoding="utf-8", errors="ignore") as f:
+                return f.read(MAX_CHARS)
         return ""
     except Exception as e:  # pragma: no cover
         return f"[تعذر استخراج النص من {path.name}: {e}]"
@@ -82,25 +84,33 @@ def _pptx(path: Path) -> str:
 def _xlsx(path: Path) -> str:
     from openpyxl import load_workbook
     wb = load_workbook(str(path), read_only=True, data_only=True)
-    parts: list[str] = []
-    for ws in wb.worksheets:
-        parts.append(f"[ورقة: {ws.title}]")
-        for row in ws.iter_rows(values_only=True):
-            cells = ["" if v is None else str(v).strip() for v in row]
-            if any(cells):
-                parts.append(" | ".join(cells))
-        parts.append("")
-    return "\n".join(parts)[:MAX_CHARS]
+    try:
+        parts: list[str] = []
+        for ws in wb.worksheets:
+            parts.append(f"[ورقة: {ws.title}]")
+            for row in ws.iter_rows(values_only=True):
+                cells = ["" if v is None else str(v).strip() for v in row]
+                if any(cells):
+                    parts.append(" | ".join(cells))
+            parts.append("")
+        return "\n".join(parts)[:MAX_CHARS]
+    finally:
+        wb.close()
 
 
 def _csv(path: Path) -> str:
     import csv
+    import sys
+    try:
+        csv.field_size_limit(sys.maxsize)
+    except OverflowError:
+        csv.field_size_limit(2147483647)
     parts: list[str] = []
     with path.open("r", encoding="utf-8", errors="ignore", newline="") as f:
         sample = f.read(4096)
         f.seek(0)
         try:
-            dialect = csv.Sniffer().sniff(sample)
+            dialect = csv.Sniffer().sniff(sample, delimiters=",\t;|")
         except Exception:
             dialect = csv.excel
         for row in csv.reader(f, dialect):
