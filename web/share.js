@@ -124,7 +124,7 @@ async function init() {
     if (copyBtn) {
       const pre = copyBtn.closest('.code-block')?.querySelector('pre') || copyBtn.closest('.code-full-card')?.querySelector('pre');
       const text = pre?.innerText || '';
-      try { await navigator.clipboard.writeText(text); copyBtn.textContent='Copied'; setTimeout(()=>copyBtn.textContent='Copy', 1200); } catch {}
+      try { await navigator.clipboard.writeText(text); copyBtn.textContent='Copied ✓'; setTimeout(()=>copyBtn.textContent='⧉ Copy', 1200); } catch {}
       return;
     }
     const img = e.target.closest('.share-img');

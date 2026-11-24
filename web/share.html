@@ -38,6 +38,25 @@ body{overflow-y:auto;overflow-x:hidden}
 .empty{padding:24px;text-align:center;color:var(--muted);border:1px dashed var(--bd);border-radius:16px}
 @media (max-width:700px){.wrap{padding:14px 10px 48px}.top{padding:14px}.share-msg{padding:14px}.share-msg .meta{flex-direction:column;align-items:flex-start}.share-att.img img{max-height:260px}}
 @media print{.top{position:static}.btn{display:none}body{background:#fff;color:#000}.share-msg,.top{box-shadow:none}}
+/* كتل الكود في صفحة المشاركة: نسخ + ملء الشاشة + تمرير أفقي بدون قص */
+.code-block{direction:ltr;text-align:left;max-width:100%;min-width:0;overflow:hidden;border:1px solid var(--bd);border-radius:12px;background:var(--card2);margin:10px 0}
+.code-block pre{margin:0;padding:13px 15px;overflow:auto;max-width:100%;background:#0b1220;color:#dbe6f5;font-size:.86rem;line-height:1.6}
+html[data-theme="light"] .code-block pre{background:#0f1726;color:#e2e8f0}
+.code-block pre code{font-family:Consolas,"Cascadia Code",Menlo,monospace;white-space:pre;display:block;min-width:max-content;background:none;color:inherit}
+.code-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 11px;border-bottom:1px solid var(--bd);font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.code-actions{display:inline-flex;gap:6px;text-transform:none;letter-spacing:0}
+.code-actions button{border:1px solid var(--bd);background:var(--card2);color:var(--fg);border-radius:8px;padding:4px 9px;font-size:.78rem;cursor:pointer}
+.code-actions button:hover{border-color:var(--accent)}
+.code-full-modal{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.62);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:20px}
+.code-full-modal.open{display:flex}
+.code-full-card{width:min(1100px,100%);max-height:calc(100vh - 40px);display:flex;flex-direction:column;background:var(--card);border:1px solid var(--bd);border-radius:14px;overflow:hidden}
+.code-full-card .cf-pre{flex:1;min-height:0;overflow:auto;max-height:calc(100vh - 110px)}
+/* تمرير كامل بدون حاويات ثابتة تقص المحتوى */
+html,body{height:auto!important;min-height:100%;overflow-y:auto!important}
+.wrap{max-height:none!important;height:auto!important;overflow:visible!important}
+#shareMsgs{max-height:none!important;height:auto!important;overflow:visible!important}
+.share-msg .body{overflow:visible;word-break:break-word;overflow-wrap:anywhere;min-width:0}
+.share-msg .body table{display:block;max-width:100%;overflow-x:auto}
 </style>
 </head>
 <body data-theme="dark">
@@ -60,26 +79,4 @@ body{overflow-y:auto;overflow-x:hidden}
 <script src="/static/share.js?v=7"></script>
 </body>
 </html>
-
-<style>
-/* كتل الكود في صفحة المشاركة: نسخ + ملء الشاشة + تمرير أفقي بدون قص */
-.code-block{direction:ltr;text-align:left;max-width:100%;min-width:0;overflow:hidden;border:1px solid var(--bd);border-radius:12px;background:var(--card2);margin:10px 0}
-.code-block pre{margin:0;padding:13px 15px;overflow:auto;max-width:100%;background:#0b1220;color:#dbe6f5;font-size:.86rem;line-height:1.6}
-html[data-theme="light"] .code-block pre{background:#0f1726;color:#e2e8f0}
-.code-block pre code{font-family:Consolas,"Cascadia Code",Menlo,monospace;white-space:pre;display:block;min-width:max-content;background:none;color:inherit}
-.code-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:6px 11px;border-bottom:1px solid var(--bd);font-size:.78rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
-.code-actions{display:inline-flex;gap:6px;text-transform:none;letter-spacing:0}
-.code-actions button{border:1px solid var(--bd);background:var(--card2);color:var(--fg);border-radius:8px;padding:4px 9px;font-size:.78rem;cursor:pointer}
-.code-actions button:hover{border-color:var(--accent)}
-.code-full-modal{position:fixed;inset:0;z-index:1000;background:rgba(0,0,0,.62);backdrop-filter:blur(4px);display:none;align-items:center;justify-content:center;padding:20px}
-.code-full-modal.open{display:flex}
-.code-full-card{width:min(1100px,100%);max-height:calc(100vh - 40px);display:flex;flex-direction:column;background:var(--card);border:1px solid var(--bd);border-radius:14px;overflow:hidden}
-.code-full-card .cf-pre{flex:1;min-height:0;overflow:auto;max-height:calc(100vh - 110px)}
-/* تمرير كامل بدون حاويات ثابتة تقص المحتوى */
-html,body{height:auto!important;min-height:100%;overflow-y:auto!important}
-.share-wrap{max-height:none!important;height:auto!important;overflow:visible!important}
-.share-msgs{max-height:none!important;height:auto!important;overflow:visible!important}
-.share-msg .body{overflow:visible;word-break:break-word;overflow-wrap:anywhere;min-width:0}
-.share-msg .body table{display:block;max-width:100%;overflow-x:auto}
-</style>
 

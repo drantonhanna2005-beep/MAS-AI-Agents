@@ -512,7 +512,7 @@ function addAiMsg(data, { instant = false } = {}) {
   if (data.status) div.dataset.status = data.status;
   div.innerHTML = `
     <div class="msg-check"><input type="checkbox" aria-label="${t("share")}"></div>
-    <div class="head"><div class="avatar">${a.emoji || "dY-"}</div>
+    <div class="head"><div class="avatar">${a.emoji || "🧭"}</div>
       <div class="who">${esc(a.name || t("agent_default"))}<small>${a.role ? esc(a.role) : ""}</small></div></div>
     ${data.thinking ? `<details class="think"${instant ? " open" : ""}><summary>${t("think_title")}</summary><div class="tbody"></div></details>` : ""}
     <div class="body"></div>
@@ -549,7 +549,7 @@ function addAiMsg(data, { instant = false } = {}) {
     const btn = e.target.closest("[data-act]");
     if (!btn) return;
     const act = btn.dataset.act;
-    if (act === "copy") { await navigator.clipboard.writeText(holder.raw || body.innerText); toast(t("t_copied")); }
+    if (act === "copy") { const ok = await _copyText(holder.raw || body.innerText); if (ok) toast(t("t_copied")); }
     if (act === "speak") speak(holder.raw || body.innerText, btn);
     if (act === "translate") await translateMsg(holder, btn);
     if (act === "regen") regenerate();
@@ -709,8 +709,9 @@ async function translateMsg(holder, btn) {
   const target = LANG === "ar" ? "en" : "ar";
   holder.translated ??= {};
   if (holder.translated[target]) { holder.translated[target].open = true; scrollBottom(); return; }
-  const old = btn.textContent;
-  btn.textContent = "⏳";
+  const span = btn.querySelector("span") || btn;
+  const old = span.textContent;
+  span.textContent = "⏳";
   btn.disabled = true;
   let block = holder.root.querySelector(`details.tr[data-target="${target}"]`);
   if (!block) {
@@ -731,7 +732,7 @@ async function translateMsg(holder, btn) {
     block.remove();
     toast(t("tr_fail") + " — " + e.message, true);
   } finally {
-    btn.textContent = old;
+    span.textContent = old;
     btn.disabled = false;
     scrollBottom();
   }
@@ -740,13 +741,19 @@ async function translateMsg(holder, btn) {
 /* ---------------- الصوت (نطق + مايك بلغة الواجهة) ---------------- */
 /* ---------------- الصوت: نطق حقيقي (OpenRouter TTS) مع fallback المتصفح ---------------- */
 let curAudio = null, curAudioBtn = null;
+function _setSpeakLabel(btn, text) {
+  if (!btn) return;
+  const span = btn.querySelector("span");
+  if (span) span.textContent = text;
+  else btn.textContent = text;
+}
 async function speak(text, btn) {
-  if (curAudio) { curAudio.pause(); curAudio = null; if (curAudioBtn) curAudioBtn.textContent = t("act_speak"); curAudioBtn = null; return; }
-  if (speechSynthesis.speaking) { speechSynthesis.cancel(); btn.textContent = t("act_speak"); return; }
+  if (curAudio) { curAudio.pause(); curAudio = null; _setSpeakLabel(curAudioBtn, t("act_speak")); curAudioBtn = null; return; }
+  if (speechSynthesis.speaking) { speechSynthesis.cancel(); _setSpeakLabel(btn, t("act_speak")); return; }
   const clean = text.replace(/[#*`>|_\-]/g, " ").trim();
   if (!clean) return;
   if (state.health?.tts?.available) {
-    btn.textContent = "⏳";
+    _setSpeakLabel(btn, "⏳");
     try {
       const res = await fetch("/api/tools/tts", {
         method: "POST", headers: { "Content-Type": "application/json" },
@@ -756,13 +763,13 @@ async function speak(text, btn) {
       const blob = await res.blob();
       if (!blob.type.startsWith("audio")) throw new Error("bad audio");
       curAudio = new Audio(URL.createObjectURL(blob));
-      curAudioBtn = btn; btn.textContent = t("act_stop");
-      curAudio.onended = () => { btn.textContent = t("act_speak"); if (curAudioBtn === btn) curAudioBtn = null; };
+      curAudioBtn = btn; _setSpeakLabel(btn, t("act_stop"));
+      curAudio.onended = () => { _setSpeakLabel(btn, t("act_speak")); if (curAudioBtn === btn) curAudioBtn = null; };
       await curAudio.play();
       return;
     } catch (e) {
       toast(t("tts_fail") + e.message, true);
-      btn.textContent = t("act_speak");
+      _setSpeakLabel(btn, t("act_speak"));
     }
   }
   const u = new SpeechSynthesisUtterance(clean.slice(0, 2500));
@@ -770,8 +777,8 @@ async function speak(text, btn) {
   const v = speechSynthesis.getVoices().find((x) => x.lang && x.lang.startsWith(pref));
   if (v) u.voice = v;
   u.lang = v ? v.lang : (LANG === "ar" ? "ar-EG" : "en-US");
-  u.onend = () => (btn.textContent = t("act_speak"));
-  btn.textContent = t("act_stop");
+  u.onend = () => _setSpeakLabel(btn, t("act_speak"));
+  _setSpeakLabel(btn, t("act_stop"));
   speechSynthesis.speak(u);
 }
 
@@ -1213,6 +1220,7 @@ $("#cameraBtn").addEventListener("click", openCamera);
 async function openCamera() {
   let facing = "environment";
   let stream = null;
+  const cleanup = () => { try { stream?.getTracks().forEach((x) => x.stop()); } catch {} };
   const ov = modalShell(t("camera_title"), `
     <div class="cam-stage">
       <video id="camVideo" autoplay playsinline muted></video>
@@ -1225,7 +1233,7 @@ async function openCamera() {
       <button class="btn ghost hidden" id="camRetake">${t("camera_retake")}</button>
       <button class="btn primary hidden" id="camUse"><svg class="ic"><use href="#i-check"/></svg>${t("camera_confirm")}</button>
       <button class="btn ghost" id="camCancel">${t("camera_cancel")}</button>
-    </div>`, false, () => { try { stream?.getTracks().forEach((x) => x.stop()); } catch {} });
+    </div>`, false, cleanup);
 
   const video = $("#camVideo", ov), preview = $("#camPreview", ov);
   const shoot = $("#camShoot", ov), retake = $("#camRetake", ov), use = $("#camUse", ov);
@@ -1410,7 +1418,7 @@ async function consumeSSE(res, holder, buf, stateRef) {
   let acc = "";
   const ensureThink = () => {
     if (!stateRef.thinkEl) {
-      holder.root.insertAdjacentHTML("afterbegin", `<details class="think live" open><summary>${t("think_title")}</summary><div class="tbody"></div></details>`);
+      holder.body.insertAdjacentHTML("beforebegin", `<details class="think live" open><summary>${t("think_title")}</summary><div class="tbody"></div></details>`);
       stateRef.thinkEl = $("details.think:not(.tr)", holder.root);
     }
     return $(".tbody", stateRef.thinkEl);
@@ -1419,7 +1427,7 @@ async function consumeSSE(res, holder, buf, stateRef) {
     switch (ev.type) {
       case "route": {
         const a = agentOf(ev.agents?.[0]?.id);
-        const av = holder.root.querySelector(".avatar"); if (av) av.textContent = a.emoji || "dY-";
+        const av = holder.root.querySelector(".avatar"); if (av) av.textContent = a.emoji || "🧭";
         const extra = ev.agents?.length > 1 ? ` + ${ev.agents.length - 1}` : (a.role ? esc(a.role) : "");
         const who = holder.root.querySelector(".who"); if (who) who.innerHTML = `${esc(a.name)}<small>${extra}</small>`;
         break;
@@ -1434,7 +1442,7 @@ async function consumeSSE(res, holder, buf, stateRef) {
       }
       case "tool": { holder.body.insertAdjacentHTML("beforeend", md(ev.markdown || "")); scrollBottom(); break; }
       case "suggest_tool": {
-        const label = (ev.tools||[]).includes("gpa") ? t("btn_gpa") + " dYr" : t("btn_cv") + " dY'�";
+        const label = (ev.tools||[]).includes("gpa") ? t("btn_gpa") : t("btn_cv");
         holder.body.insertAdjacentHTML("beforeend", `<div style="margin-top:10px"><button class="btn primary" data-tool="${(ev.tools||[])[0]}">${LANG==="ar"?"افتح ":"Open "}${label}</button></div>`);
         $$("[data-tool]", holder.body).forEach((b) => b.addEventListener("click", () => openModal(b.dataset.tool)));
         scrollBottom(); break;
@@ -1627,32 +1635,34 @@ async function modalSettings() {
     <div class="modal-foot"><button class="btn primary" id="sSave">${t("save")}</button></div>`);
   $("#sTemp", ov).addEventListener("input", (e) => ($("#tempVal", ov).textContent = e.target.value));
   $("#sSave", ov).addEventListener("click", async () => {
-    await api("/api/settings", {
-      method: "POST",
-      body: {
-        provider: $("#sProv", ov).value,
-        ollama_url: $("#sOllamaUrl", ov).value.trim(),
-        main_models: {
-          ollama: $("#sOllamaModel", ov).value.trim(),
-          groq: $("#sGroqModel", ov).value.trim() || undefined,
-          openrouter: $("#sORModel", ov).value.trim() || undefined,
-          gemini: $("#sGemModel", ov).value.trim() || undefined,
+    try {
+      await api("/api/settings", {
+        method: "POST",
+        body: {
+          provider: $("#sProv", ov).value,
+          ollama_url: $("#sOllamaUrl", ov).value.trim(),
+          main_models: {
+            ollama: $("#sOllamaModel", ov).value.trim(),
+            groq: $("#sGroqModel", ov).value.trim() || undefined,
+            openrouter: $("#sORModel", ov).value.trim() || undefined,
+            gemini: $("#sGemModel", ov).value.trim() || undefined,
+          },
+          api_keys: { groq: $("#sGroq", ov).value.trim(), openrouter: $("#sOR", ov).value.trim(), gemini: $("#sGem", ov).value.trim() },
+          stt: { model: $("#sStt", ov).value.trim() || "whisper-large-v3-turbo" },
+          tts: { model: $("#sTts", ov).value.trim() || "heygen/heygen-voice-1-turbo:free",
+                 voice: $("#sTtsVoice", ov).value.trim() || "nadine" },
+          embed: { provider: $("#sEmbP", ov).value,
+                   model: $("#sEmbM", ov).value.trim() || "nvidia/nemotron-3-embed-1b:free" },
+          model_keys: { openrouter: parseModelKeys($("#sModelKeys", ov).value) },
+          temperature: parseFloat($("#sTemp", ov).value),
+          deep_think: $("#sDeep", ov).checked,
+          web_search: $("#sWeb", ov).checked,
+          auto_translate: $("#sAutoTr", ov).checked,
         },
-        api_keys: { groq: $("#sGroq", ov).value.trim(), openrouter: $("#sOR", ov).value.trim(), gemini: $("#sGem", ov).value.trim() },
-        stt: { model: $("#sStt", ov).value.trim() || "whisper-large-v3-turbo" },
-        tts: { model: $("#sTts", ov).value.trim() || "heygen/heygen-voice-1-turbo:free",
-               voice: $("#sTtsVoice", ov).value.trim() || "nadine" },
-        embed: { provider: $("#sEmbP", ov).value,
-                 model: $("#sEmbM", ov).value.trim() || "nvidia/nemotron-3-embed-1b:free" },
-        model_keys: { openrouter: parseModelKeys($("#sModelKeys", ov).value) },
-        temperature: parseFloat($("#sTemp", ov).value),
-        deep_think: $("#sDeep", ov).checked,
-        web_search: $("#sWeb", ov).checked,
-        auto_translate: $("#sAutoTr", ov).checked,
-      },
-    });
-    state.autoTr = $("#sAutoTr", ov).checked;
-    ov.remove(); toast(t("t_saved")); refreshHealth();
+      });
+      state.autoTr = $("#sAutoTr", ov).checked;
+      ov.remove(); toast(t("t_saved")); refreshHealth();
+    } catch (e) { toast((t("err_generic") || "Error") + " — " + e.message, true); }
   });
 }
 
@@ -1728,11 +1738,13 @@ function modalGPA() {
     const pg = parseFloat($("#gPrev", ov).value), ph = parseFloat($("#gPrevH", ov).value);
     if (!isNaN(pg)) body.previous_gpa = pg;
     if (!isNaN(ph) && ph > 0) body.previous_hours = ph;
-    const res = await api("/api/tools/gpa", { method: "POST", body });
-    if (res.error) { toast(res.error, true); return; }
-    lastMd = res.markdown;
-    $("#gResult", ov).innerHTML = `<div class="gpa-result">${md(lastMd)}</div>`;
-    $("#gSave", ov).classList.remove("hidden");
+    try {
+      const res = await api("/api/tools/gpa", { method: "POST", body });
+      if (res.error) { toast(res.error, true); return; }
+      lastMd = res.markdown;
+      $("#gResult", ov).innerHTML = `<div class="gpa-result">${md(lastMd)}</div>`;
+      $("#gSave", ov).classList.remove("hidden");
+    } catch (e) { toast(e.message || t("err_generic"), true); }
   });
   $("#gSave", ov).addEventListener("click", async () => {
     if (!lastMd) return;
@@ -1847,22 +1859,26 @@ function modalCV() {
   const cvLang = () => $("#cLang", ov).value;
 
   $("#cAnalyze", ov).addEventListener("click", async () => {
-    const res = await api("/api/tools/cv/analyze", { method: "POST", body: { profile: readProfile(), track: $("#cTrack", ov).value, lang: cvLang() } });
-    const checks = res.checks.map((c) => `<div class="cv-check"><span class="ic">${c.ok ? "✅" : c.partial ? "🟡" : "❌"}</span>
-      <span><b>${esc(c.check)}</b> — ${esc(c.tip)}</span></div>`).join("");
-    $("#cvOut", ov).innerHTML = `<div class="cv-score">
-      <div style="display:flex;align-items:center;gap:14px">
-        <div class="big">${res.score}<span style="font-size:16px">/100</span></div>
-        <div><b>${esc(res.label)}</b><br><small style="color:var(--txt2)">${t("cv_track_note")} ${esc(res.track)}</small></div>
-      </div><hr style="border-color:var(--line);margin:10px 0">${checks}
-      ${res.missing_keywords.length ? `<div class="note">${t("kw_suggest")}${res.missing_keywords.map(esc).join("، ")}</div>` : ""}
-    </div>`;
+    try {
+      const res = await api("/api/tools/cv/analyze", { method: "POST", body: { profile: readProfile(), track: $("#cTrack", ov).value, lang: cvLang() } });
+      const checks = res.checks.map((c) => `<div class="cv-check"><span class="ic">${c.ok ? "✅" : c.partial ? "🟡" : "❌"}</span>
+        <span><b>${esc(c.check)}</b> — ${esc(c.tip)}</span></div>`).join("");
+      $("#cvOut", ov).innerHTML = `<div class="cv-score">
+        <div style="display:flex;align-items:center;gap:14px">
+          <div class="big">${res.score}<span style="font-size:16px">/100</span></div>
+          <div><b>${esc(res.label)}</b><br><small style="color:var(--txt2)">${t("cv_track_note")} ${esc(res.track)}</small></div>
+        </div><hr style="border-color:var(--line);margin:10px 0">${checks}
+        ${res.missing_keywords.length ? `<div class="note">${t("kw_suggest")}${res.missing_keywords.map(esc).join("، ")}</div>` : ""}
+      </div>`;
+    } catch (e) { toast(e.message || t("err_generic"), true); }
   });
   $("#cHtml", ov).addEventListener("click", async () => {
-    const res = await api("/api/tools/cv/html", { method: "POST", body: { profile: readProfile(), lang: cvLang(), theme: readTheme() } });
-    const blob = new Blob([res.html], { type: "text/html;charset=utf-8" });
-    window.open(URL.createObjectURL(blob), "_blank");
-    toast(t("t_cv_print"));
+    try {
+      const res = await api("/api/tools/cv/html", { method: "POST", body: { profile: readProfile(), lang: cvLang(), theme: readTheme() } });
+      const blob = new Blob([res.html], { type: "text/html;charset=utf-8" });
+      window.open(URL.createObjectURL(blob), "_blank");
+      toast(t("t_cv_print"));
+    } catch (e) { toast(e.message || t("t_cv_fail"), true); }
   });
   $("#cPdf", ov).addEventListener("click", async () => {
     const btn = $("#cPdf", ov); btn.textContent = "⏳"; btn.disabled = true;
@@ -2116,7 +2132,7 @@ function renderConversationFeedback(chat) {
   const wrap = document.createElement('div');
   wrap.id = 'convFeedbackPrompt';
   wrap.className = 'conv-feedback';
-  const isAr = (state.lang || document.documentElement.lang || 'ar').startsWith('ar');
+  const isAr = (LANG || document.documentElement.lang || 'ar').startsWith('ar');
   const q = isAr ? 'هل هذه المحادثة مفيدة حتى الآن؟' : 'Is this conversation helpful so far?';
   wrap.innerHTML = `
     <div class="conv-feedback-inner">
