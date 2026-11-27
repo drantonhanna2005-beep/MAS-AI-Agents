@@ -12,7 +12,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/style.css?v=6">
+<link rel="stylesheet" href="/static/style.css?v=7">
+<link rel="stylesheet" href="/static/avatar.css?v=2">
 </head>
 <body>
 
@@ -53,7 +54,10 @@
     <symbol id="i-file" viewBox="0 0 24 24"><path d="M6 3h8l4 4v14H6z"/><path d="M14 3v5h5"/></symbol>
     <symbol id="i-expand" viewBox="0 0 24 24"><path d="M4 9V4h5"/><path d="M20 15v5h-5"/><path d="M4 4l6 6"/><path d="M20 20l-6-6"/></symbol>
 <symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></symbol>
-<symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6z"/><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/></symbol>
+<symbol id="i-avatar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="3"/><path d="m10 8.5 5.2 3-5.2 3z"/><path d="M9 21h6"/></symbol>
+    <symbol id="i-mute" viewBox="0 0 24 24"><path d="M4 10v4h4l5 4V6L8 10z"/><path d="m16.5 9.5 5 5M21.5 9.5l-5 5"/></symbol>
+    <symbol id="i-min" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+    <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.6 5.4L19 10l-5.4 1.6L12 17l-1.6-5.4L5 10l5.4-1.6z"/><path d="M19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/></symbol>
   </defs>
 </svg>
 
@@ -139,6 +143,9 @@
         <button id="reindexBtn" class="tb-icon" data-i18n-title="reindex_title" title="إعادة فهرسة الملفات" aria-label="Re-index">
           <svg class="ic"><use href="#i-refresh"/></svg>
         </button>
+        <button id="avatarBtn" class="tb-icon" data-i18n-title="avatar_title" title="المساعد المرئي" aria-label="Show assistant" aria-pressed="false">
+          <svg class="ic"><use href="#i-avatar"/></svg>
+        </button>
         <button id="themeBtn" class="tb-icon" data-i18n-title="theme_title" title="الوضع الليلي/النهاري" aria-label="Toggle theme">
           <svg class="ic"><use href="#i-sun"/></svg>
         </button>
@@ -210,6 +217,7 @@
 <div id="modalRoot"></div>
 <div id="toastRoot"></div>
 <script src="/static/i18n.js?v=6"></script>
-<script src="/static/app.js?v=6"></script>
+<script src="/static/avatar.js?v=2"></script>
+<script src="/static/app.js?v=7"></script>
 </body>
 </html>

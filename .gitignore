@@ -41,6 +41,13 @@ _*
 !_docs/*
 !**/__init__.py
 
+# مخرجات توليد مقاطع الـ avatar (إطارات مؤقتة)
+tools/frames/
+tools/__pycache__/
+
+# لقطات QA المؤقتة
+_docs/qa/tmp-*.png
+
 # OS / Editor files
 .DS_Store
 Thumbs.db

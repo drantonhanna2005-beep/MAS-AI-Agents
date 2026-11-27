@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<title>QA — معاينة الواجهة على مقاسات مختلفة</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #1a1f2b; }
+  iframe { border: 0; display: block; margin: 0 auto; background: #0b0f16; }
+</style>
+</head>
+<body>
+<!--
+  صفحة اختبار بصرية (dev only) — تُستخدم للتحقق من التجاوب والثيمين والاتجاهين.
+  مثال: /static/_qa/viewport-preview.html?w=390&h=760&open=1&state=speaking&t=1.2
+-->
+<iframe id="f" title="preview"></iframe>
+<script>
+  const q = new URLSearchParams(location.search);
+  const w = +(q.get("w") || 1280);
+  const h = +(q.get("h") || 760);
+  const f = document.getElementById("f");
+  f.width = w; f.height = h;
+  // نضبط التفضيلات قبل التحميل حتى يقرأها init() من أول مرة
+  try {
+    if (q.get("sidebar") === "0") localStorage.setItem("mas-sidebar", "closed");
+    if (q.get("theme")) localStorage.setItem("mas-theme", q.get("theme"));
+  } catch {}
+  f.src = "/";
+  f.onload = () => {
+    setTimeout(() => {
+      try {
+        const W = f.contentWindow;
+        if (q.get("theme")) W.applyTheme(q.get("theme"));
+        if (q.get("lang")) W.setLang(q.get("lang"));
+        if (q.get("sidebar") === "0") W.setSidebar(false);
+        if (q.get("open") !== "0") W.AvatarStage.open();
+        if (q.get("state")) W.AvatarStage.setState(q.get("state"));
+        const t = q.get("t");
+        if (t != null) {
+          const v = [...W.document.querySelectorAll("#avatarStage video")].find((x) => x.classList.contains("on"));
+          if (v) { v.currentTime = +t; v.pause(); }
+        }
+        document.title = `QA ${w}×${h}`;
+      } catch (e) { document.title = "QA ERR: " + e.message; }
+    }, 900);
+  };
+</script>
+</body>
+</html>
