@@ -748,8 +748,8 @@ function _setSpeakLabel(btn, text) {
   else btn.textContent = text;
 }
 async function speak(text, btn) {
-  if (curAudio) { curAudio.pause(); curAudio = null; _setSpeakLabel(curAudioBtn, t("act_speak")); curAudioBtn = null; return; }
-  if (speechSynthesis.speaking) { speechSynthesis.cancel(); _setSpeakLabel(btn, t("act_speak")); return; }
+  if (curAudio) { curAudio.pause(); curAudio = null; _setSpeakLabel(curAudioBtn, t("act_speak")); curAudioBtn = null; window.AvatarStage?.unbindAudio(); window.AvatarStage?.setState("idle"); return; }
+  if (speechSynthesis.speaking) { speechSynthesis.cancel(); _setSpeakLabel(btn, t("act_speak")); window.AvatarStage?.setState("idle"); return; }
   const clean = text.replace(/[#*`>|_\-]/g, " ").trim();
   if (!clean) return;
   if (state.health?.tts?.available) {
@@ -764,12 +764,14 @@ async function speak(text, btn) {
       if (!blob.type.startsWith("audio")) throw new Error("bad audio");
       curAudio = new Audio(URL.createObjectURL(blob));
       curAudioBtn = btn; _setSpeakLabel(btn, t("act_stop"));
-      curAudio.onended = () => { _setSpeakLabel(btn, t("act_speak")); if (curAudioBtn === btn) curAudioBtn = null; };
+      curAudio.onended = () => { _setSpeakLabel(btn, t("act_speak")); if (curAudioBtn === btn) curAudioBtn = null; window.AvatarStage?.unbindAudio(); window.AvatarStage?.setState("idle"); };
       await curAudio.play();
+      window.AvatarStage?.bindAudio(curAudio);
       return;
     } catch (e) {
       toast(t("tts_fail") + e.message, true);
       _setSpeakLabel(btn, t("act_speak"));
+      window.AvatarStage?.setState("idle");
     }
   }
   const u = new SpeechSynthesisUtterance(clean.slice(0, 2500));
@@ -777,8 +779,9 @@ async function speak(text, btn) {
   const v = speechSynthesis.getVoices().find((x) => x.lang && x.lang.startsWith(pref));
   if (v) u.voice = v;
   u.lang = v ? v.lang : (LANG === "ar" ? "ar-EG" : "en-US");
-  u.onend = () => _setSpeakLabel(btn, t("act_speak"));
+  u.onend = () => { _setSpeakLabel(btn, t("act_speak")); window.AvatarStage?.setState("idle"); };
   _setSpeakLabel(btn, t("act_stop"));
+  window.AvatarStage?.setState("speaking");
   speechSynthesis.speak(u);
 }
 
@@ -905,6 +908,7 @@ function startVoice() {
   voiceTick();
   voiceStatus(t("voice_listening"), true);
   $("#micBtn")?.classList.add("rec");
+  window.AvatarStage?.setState("listening");
   voiceEl("vStart")?.classList.add("hidden");
   voiceEl("vPause")?.classList.remove("hidden");
   voiceEl("vStop")?.classList.remove("hidden");
@@ -1047,6 +1051,7 @@ function toggleVoicePause() {
 }
 
 function stopVoice(finalize = true) {
+  window.AvatarStage?.setState("idle");
   Voice.running = false;
   Voice.paused = false;
   Voice.finalizeFull = !!finalize;   // إيقاف = أرسل التسجيل الكامل لـ Whisper | إغلاق/إلغاء = تجاهل
@@ -1408,6 +1413,7 @@ function finalizeStream(holder) {
   $(".typing", holder.body)?.remove();
   holder.root.querySelectorAll("details.think.live").forEach(d => d.classList.remove("live"));
   state.streaming = false; els.sendBtn.disabled = false;
+  window.AvatarStage?.setState("idle");
   refreshHealth(); loadChats().then(()=>{ updateChatTitle(); renderConvNav(); });
   updateScrollBtn();
 }
@@ -1427,6 +1433,8 @@ async function consumeSSE(res, holder, buf, stateRef) {
     switch (ev.type) {
       case "route": {
         const a = agentOf(ev.agents?.[0]?.id);
+        window.AvatarStage?.setAgent({ name: a.name, role: a.role });
+        window.AvatarStage?.setState("thinking");
         const av = holder.root.querySelector(".avatar"); if (av) av.textContent = a.emoji || "🧭";
         const extra = ev.agents?.length > 1 ? ` + ${ev.agents.length - 1}` : (a.role ? esc(a.role) : "");
         const who = holder.root.querySelector(".who"); if (who) who.innerHTML = `${esc(a.name)}<small>${extra}</small>`;
@@ -1434,7 +1442,7 @@ async function consumeSSE(res, holder, buf, stateRef) {
       }
       case "thinking": { const tb = ensureThink(); tb.textContent += ev.delta || ""; scrollBottom(); break; }
       case "content": {
-        if (stateRef.firstContent) { $(".typing", holder.body)?.remove(); stateRef.firstContent = false; if (stateRef.thinkEl) stateRef.thinkEl.classList.remove("live"); }
+        if (stateRef.firstContent) { $(".typing", holder.body)?.remove(); stateRef.firstContent = false; if (stateRef.thinkEl) stateRef.thinkEl.classList.remove("live"); window.AvatarStage?.setState("speaking"); }
         buf.push(ev.delta || "");
         if (!stateRef.ctext) { stateRef.ctext = document.createElement("div"); stateRef.ctext.className = "ai-text"; holder.body.appendChild(stateRef.ctext); }
         stateRef.ctext.innerHTML = md(buf.join(""));
@@ -1448,7 +1456,7 @@ async function consumeSSE(res, holder, buf, stateRef) {
         scrollBottom(); break;
       }
       case "sources": renderSources(holder.srcRow, ev.sources || []); break;
-      case "error": { toast(ev.text, true); holder.status="error"; holder.error=ev.text; const rb=holder.root.querySelector('[data-act="retry"]'); if(rb) rb.style.display=''; break; }
+      case "error": { window.AvatarStage?.setState("error"); toast(ev.text, true); holder.status="error"; holder.error=ev.text; const rb=holder.root.querySelector('[data-act="retry"]'); if(rb) rb.style.display=''; break; }
       case "user_saved": {
         if (stateRef.userDiv && ev.message) {
           stateRef.userDiv.dataset.mid = ev.message.id;
@@ -1491,6 +1499,7 @@ async function streamChat(payload) {
   els.sendBtn.disabled = true;
   showWelcome(false);
   const holder = addAiMsg({ agent: state.agentHint || "orchestrator", content: "", created: Date.now()/1000, status: "streaming" });
+  window.AvatarStage?.setState("thinking");
   const buf = [];
   const stateRef = { thinkEl: null, firstContent: true, ctext: null, userDiv: payload.__userDiv || null };
   const cleanPayload = { ...payload }; delete cleanPayload.__userDiv; delete cleanPayload.__skipUserAdd;
@@ -2108,6 +2117,11 @@ async function loadSettingsFlags() {
 }
 
 async function init() {
+  const avBtn = $("#avatarBtn");
+  avBtn?.addEventListener("click", () => {
+    window.AvatarStage?.toggle();
+    requestAnimationFrame(() => avBtn.setAttribute("aria-pressed", String(!!window.AvatarStage?.isOpen())));
+  });
   applyTheme(localStorage.getItem("mas-theme") || "dark");
   applyI18n();
   const savedSb = localStorage.getItem("mas-sidebar");

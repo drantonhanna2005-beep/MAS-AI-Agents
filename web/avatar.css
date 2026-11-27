@@ -1,0 +1,281 @@
+/* ============================================================================
+   Avatar Stage — مكوّن عرض الـ Avatar أثناء الرد
+   الفريق الثاني (Frontend & Multimedia) — عبدالرحمن: الفيديو وتجربة المستخدم
+   ----------------------------------------------------------------------------
+   يعتمد على الـ design tokens المعرّفة في style.css (--fs-*, --sp-*, --radius-*).
+   الحالات: idle | listening | thinking | speaking | error
+   الأوضاع: data-mode="video" (فيديو حقيقي) | "art" (بديل SVG متحرك)
+   ========================================================================== */
+
+#avatarStage {
+  --av-w: 268px;
+  --av-radius: 22px;
+  --av-gap: 10px;
+  --av-bottom: 112px;
+  position: fixed;
+  inset-inline-end: 18px;
+  bottom: calc(var(--av-bottom) + env(safe-area-inset-bottom, 0px));
+  z-index: var(--z-avatar, 45);
+  width: var(--av-w);
+  font-family: var(--font);
+  color: var(--txt);
+  transition: opacity var(--dur-2, 220ms) var(--ease-out, ease), transform var(--dur-2, 220ms) var(--ease-out, ease);
+}
+#avatarStage[data-hidden="true"] { display: none; }
+#avatarStage[data-open="false"] { width: 66px; }
+
+/* ---------------------------------------------------------------- الكارت */
+.av-card {
+  position: relative;
+  /* خلفية صلبة مقصودة: الفيديو والرموز تحتاج تبايناً ثابتاً في كل المتصفحات */
+  background: var(--card);
+  border: 1px solid var(--line2);
+  border-radius: var(--av-radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  animation: avIn var(--dur-3, 320ms) var(--ease-out, cubic-bezier(.2,.8,.2,1));
+}
+#avatarStage[data-open="false"] .av-card { display: none; }
+/* حركة الدخول على transform فقط — لو الأنيميشن اتجمّد تفضل البطاقة معتمة بالكامل */
+@keyframes avIn { from { transform: translateY(10px) scale(.97); } to { transform: none; } }
+
+.av-head {
+  display: flex; align-items: center; gap: var(--sp-2, 8px);
+  padding: 9px 10px 8px 9px;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--card2) 70%, transparent), transparent);
+}
+.av-live {
+  width: 8px; height: 8px; border-radius: 50%; flex: 0 0 auto;
+  background: var(--txt3); box-shadow: 0 0 0 3px rgba(128, 140, 160, .12);
+  transition: background var(--dur-1, 140ms), box-shadow var(--dur-1, 140ms);
+}
+#avatarStage[data-state="listening"] .av-live { background: var(--err); box-shadow: 0 0 0 3px rgba(240, 91, 106, .18); animation: avPulse 1.4s infinite; }
+#avatarStage[data-state="thinking"] .av-live { background: var(--gold); box-shadow: 0 0 0 3px rgba(228, 180, 95, .18); animation: avPulse 1.8s infinite; }
+#avatarStage[data-state="speaking"] .av-live { background: var(--ok); box-shadow: 0 0 0 3px rgba(47, 191, 143, .18); }
+#avatarStage[data-state="error"] .av-live { background: var(--err); }
+@keyframes avPulse { 50% { opacity: .45; } }
+
+.av-id { flex: 1; min-width: 0; line-height: 1.25; }
+.av-id b { display: block; font-size: var(--fs-13, 13px); font-weight: 800; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.av-id small { display: block; font-size: var(--fs-10, 10px); color: var(--txt2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.av-ico {
+  width: 27px; height: 27px; flex: 0 0 auto; border-radius: 8px;
+  display: grid; place-items: center; color: var(--txt2);
+  transition: background var(--dur-1, 140ms), color var(--dur-1, 140ms);
+}
+.av-ico:hover { background: var(--bg3); color: var(--txt); }
+.av-ico .ic { width: 15px; height: 15px; }
+.av-ico.on { color: var(--accent); background: var(--accent-soft); }
+
+/* ---------------------------------------------------------------- الشاشة */
+.av-screen {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  background: radial-gradient(120% 90% at 50% 0%, #1a2c49 0%, #0a0f18 72%);
+  overflow: hidden;
+  isolation: isolate;
+}
+.av-video {
+  position: absolute; inset: 0; width: 100%; height: 100%;
+  object-fit: cover; opacity: 0;
+  transition: opacity var(--dur-3, 320ms) ease;
+  background: #0a0f18;
+}
+.av-video.on { opacity: 1; }
+#avatarStage[data-mode="video"] .av-art { opacity: 0; visibility: hidden; }
+
+.av-art { position: absolute; inset: 0; display: grid; place-items: center; transition: opacity var(--dur-3, 320ms) ease; }
+.av-art svg { width: 100%; height: 100%; display: block; }
+
+/* ظل سفلي خفيف يضمن قراءة الأدوات فوق أي صورة */
+.av-scrim {
+  position: absolute; inset-inline: 0; bottom: 0; height: 46%;
+  background: linear-gradient(180deg, transparent, rgba(5, 9, 16, .72));
+  pointer-events: none; z-index: 2;
+}
+
+/* حالة التشغيل أعلى الشاشة */
+.av-status {
+  position: absolute; top: 9px; inset-inline-start: 9px; z-index: 3;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 9px; border-radius: var(--radius-pill, 999px);
+  font-size: var(--fs-10, 10px); font-weight: 700; color: #eaf0fb;
+  background: rgba(8, 14, 24, .58); border: 1px solid rgba(255, 255, 255, .12);
+  backdrop-filter: blur(8px);
+}
+.av-status .d { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.av-status .t { font-variant-numeric: tabular-nums; }
+#avatarStage .av-zoom { position: absolute; top: 8px; inset-inline-end: 8px; z-index: 5; display: none; width: 26px; height: 26px; }
+
+/* مؤشر الصوت (يظهر فقط أثناء تشغيل صوت TTS حقيقي) */
+.av-eq {
+  position: absolute; bottom: 44px; inset-inline-start: 12px; z-index: 3;
+  display: flex; align-items: flex-end; gap: 3px; height: 18px;
+  opacity: 0; transition: opacity var(--dur-2, 220ms);
+}
+#avatarStage[data-audio="1"] .av-eq { opacity: 1; }
+.av-eq i {
+  width: 3px; height: 100%; border-radius: 3px;
+  background: linear-gradient(180deg, #9dc0ff, var(--accent));
+  transform-origin: bottom; transform: scaleY(.18);
+  transition: transform 90ms linear;
+}
+
+/* ------------------------------------------------------------ أدوات المشغل */
+.av-bar {
+  position: absolute; inset-inline: 0; bottom: 0; z-index: 4;
+  display: flex; align-items: center; gap: 6px;
+  padding: 8px 9px 9px;
+  /* أدوات المشغل تبقى LTR مثل أي مشغل فيديو حتى في الواجهة العربية */
+  direction: ltr;
+}
+.av-bar .ic { width: 16px; height: 16px; }
+.av-btn {
+  width: 26px; height: 26px; flex: 0 0 auto; border-radius: 8px;
+  display: grid; place-items: center; color: #e8eefb;
+  background: rgba(10, 16, 26, .34); border: 1px solid rgba(255, 255, 255, .10);
+  transition: background var(--dur-1, 140ms), transform var(--dur-1, 140ms), opacity var(--dur-1, 140ms);
+}
+.av-btn:hover { background: rgba(255, 255, 255, .18); }
+.av-btn:active { transform: scale(.94); }
+.av-btn:disabled { opacity: .35; cursor: default; }
+.av-btn:focus-visible { outline: 2px solid #fff; outline-offset: 1px; }
+
+.av-track {
+  position: relative; flex: 1; height: 16px; display: flex; align-items: center;
+  cursor: pointer; min-width: 24px; touch-action: none;
+}
+.av-track::before {
+  content: ""; position: absolute; inset-inline: 0; height: 3px; border-radius: 3px;
+  background: rgba(255, 255, 255, .24);
+}
+.av-fill { position: absolute; inset-inline-start: 0; height: 3px; width: 0%; border-radius: 3px; background: #fff; }
+.av-knob {
+  position: absolute; top: 50%; inset-inline-start: 0; width: 9px; height: 9px; border-radius: 50%;
+  background: #fff; transform: translate(-50%, -50%); box-shadow: 0 1px 4px rgba(0, 0, 0, .4);
+  opacity: 0; transition: opacity var(--dur-1, 140ms);
+}
+html[dir="rtl"] .av-knob { transform: translate(50%, -50%); }
+.av-track:hover .av-knob, .av-track:focus-visible .av-knob { opacity: 1; }
+.av-track:focus-visible { outline: 2px solid #fff; outline-offset: 2px; border-radius: 4px; }
+
+.av-time {
+  font-size: var(--fs-10, 10px); font-variant-numeric: tabular-nums;
+  color: #dbe5f5; min-width: 30px; text-align: center; flex: 0 0 auto;
+}
+
+/* الشاشة الكاملة: نفس الأدوات فوق الفيديو */
+.av-screen:fullscreen { aspect-ratio: auto; width: 100vw; height: 100vh; border-radius: 0; }.av-screen:fullscreen .av-video { object-fit: contain; }
+.av-screen:fullscreen .av-art svg { width: min(86vh, 86vw); height: auto; }
+.av-screen:fullscreen .av-bar { padding: 16px 22px; gap: 12px; }
+.av-screen:fullscreen .av-scrim { height: 26%; }
+
+/* ------------------------------------------------------------ الحالة المطوية */
+.av-orb {
+  display: none; position: relative;
+  width: 62px; height: 62px; border-radius: 50%;
+  padding: 0; overflow: visible;
+  background: radial-gradient(120% 120% at 30% 0%, #24406b, #0d1624 70%);
+  border: 1px solid var(--line2);
+  box-shadow: var(--shadow), 0 0 0 1px rgba(255, 255, 255, .04) inset;
+  transition: transform var(--dur-2, 220ms) var(--ease-out, ease), box-shadow var(--dur-2, 220ms);
+}
+#avatarStage[data-open="false"] .av-orb { display: grid; place-items: center; }
+.av-orb:hover { transform: translateY(-2px) scale(1.03); }
+.av-orb:active { transform: scale(.97); }
+.av-orb .face { position: absolute; inset: 0; border-radius: 50%; overflow: hidden; }
+.av-orb .face svg { width: 100%; height: 100%; transform: scale(2.05) translate(0, 6px); transform-origin: 50% 50%; }
+.av-orb::after {
+  content: ""; position: absolute; inset: -4px; border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  opacity: 0; transition: opacity var(--dur-2, 220ms);
+}
+#avatarStage[data-state="speaking"] .av-orb::after,
+#avatarStage[data-state="listening"] .av-orb::after { opacity: 1; animation: avRing 2s ease-out infinite; }
+#avatarStage[data-state="thinking"] .av-orb { animation: avBob 2.2s ease-in-out infinite; }
+@keyframes avRing { 0% { transform: scale(.96); opacity: .8; } 100% { transform: scale(1.18); opacity: 0; } }
+@keyframes avBob { 50% { transform: translateY(-3px); } }
+
+.av-orb-dot {
+  position: absolute; bottom: 3px; inset-inline-end: 3px;
+  width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--card);
+  background: var(--txt3); z-index: 2;
+}
+#avatarStage[data-state="speaking"] .av-orb-dot { background: var(--ok); }
+#avatarStage[data-state="thinking"] .av-orb-dot { background: var(--gold); }
+#avatarStage[data-state="listening"] .av-orb-dot { background: var(--err); }
+
+/* ------------------------------------------------------------------ الرسم */
+/* حركات الـ avatar المرسوم (fallback) — تعمل حتى بدون أي ملف فيديو */
+.av-head-g { animation: avBreathe 5.2s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 90%; }
+.av-eyes-g { animation: avBlink 5.4s infinite; transform-box: fill-box; transform-origin: center; }
+.av-mouth-g { transform-box: fill-box; transform-origin: center; }
+.av-chest { animation: avChest 5.2s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
+@keyframes avBreathe { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-2.2px) scale(1.006); } }
+@keyframes avBlink { 0%, 95.5%, 100% { transform: scaleY(1); } 97%, 98% { transform: scaleY(.08); } }
+@keyframes avChest { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.012); } }
+
+#avatarStage[data-state="thinking"] .av-head-g { animation: avTilt 3.4s ease-in-out infinite; }
+@keyframes avTilt {
+  0%, 100% { transform: rotate(0deg) translateY(0); }
+  30% { transform: rotate(-1.4deg) translateY(-1px); }
+  70% { transform: rotate(1.1deg) translateY(0); }
+}
+
+#avatarStage[data-state="speaking"] .av-mouth-g {
+  animation: avTalk .34s ease-in-out infinite alternate;
+  animation-delay: var(--av-mouth-delay, 0ms);
+}
+@keyframes avTalk {
+  from { transform: scaleY(.35) scaleX(.96); }
+  to { transform: scaleY(calc(.55 + var(--av-mouth, .3))) scaleX(1.02); }
+}
+#avatarStage[data-state="speaking"] .av-brow-g { animation: avBrow 1.6s ease-in-out infinite; }
+
+/* في وضع الرسم لا يوجد فيديو: نخفي أدوات الشريط غير المنطقية */
+#avatarStage[data-mode="art"] .av-track,
+#avatarStage[data-mode="art"] .av-time,
+#avatarStage[data-mode="art"] [data-av="play"],
+#avatarStage[data-mode="art"] [data-av="replay"],
+#avatarStage[data-mode="art"] [data-av="mute"] { display: none; }
+#avatarStage[data-mode="art"] .av-bar { justify-content: flex-end; }
+#avatarStage[data-mode="art"] .av-bar { justify-content: flex-end; }
+
+/* ------------------------------------------------------------ استجابة الشاشات */
+@media (max-width: 860px) {
+  #avatarStage { --av-w: 232px; --av-bottom: 96px; inset-inline-end: 12px; }
+  #avatarStage[data-open="false"] { width: 58px; }
+  .av-orb { width: 56px; height: 56px; }
+}
+@media (max-width: 520px) {
+  #avatarStage { --av-w: min(206px, 58vw); --av-bottom: 92px; }
+  /* على الموبايل: يظهر كفقاعة صغيرة أثناء الرد حتى لا يغطي نص الرسالة */
+  #avatarStage[data-open="true"][data-expanded="false"] { --av-w: 122px; }
+  #avatarStage[data-open="true"][data-expanded="false"] .av-head,
+  #avatarStage[data-open="true"][data-expanded="false"] .av-bar,
+  #avatarStage[data-open="true"][data-expanded="false"] .av-status { display: none; }
+  #avatarStage[data-open="true"][data-expanded="false"] .av-card {
+    border-radius: 16px; cursor: zoom-in;
+    box-shadow: var(--shadow), 0 0 0 1px rgba(255, 255, 255, .05) inset;
+  }
+  #avatarStage .av-zoom { display: grid; }
+}
+@media (max-height: 620px) {
+  #avatarStage { --av-w: 176px; --av-bottom: 88px; }
+  .av-head { padding: 6px 8px; }
+  .av-id small { display: none; }
+  .av-bar { padding: 5px 7px 6px; }
+}
+@media (max-height: 460px) {
+  #avatarStage { --av-w: 148px; --av-bottom: 76px; }
+  .av-status, .av-time { display: none; }
+}
+body.share-mode #avatarStage { display: none; }
+
+/* في LTR يقع شريط التنقل الجانبي على اليمين — نزيح البطاقة حتى لا تغطيه */
+html[dir="ltr"] #avatarStage { inset-inline-end: 50px; }
+@media (max-width: 860px) {
+  html[dir="ltr"] #avatarStage { inset-inline-end: 12px; }
+}
